@@ -11,11 +11,13 @@ WHATSAPP_WEB_URL = 'https://web.whatsapp.com/'
 BOT_CONTACT = '//span[@title = "MusicBot"]'
 MESSAGE_BOX = 'div._2S1VP.copyable-text.selectable-text'
 OUT_CLASS = 'message-out'
+TEXT_CLASS = 'ZhF0n'
 SESSION_TERMINATOR_REP = 'shutting down...'
 SESSION_TERMINATOR_MSG = 'mischief managed'
-URL_EXPRESSION = r'https://youtu.be/.{4}-.{6}'
-SHUTDOWN_VALUE = -1
-IGNORE_VALUE = -2
+URL_EXPRESSION = r'https://youtu.be/.+'
+SHUTDOWN_VALUE = '-1'
+IGNORE_VALUE = '-2'
+LAST_TREATED_FILE = 'shit.txt'
 
 
 def reply_text(msg):
@@ -29,24 +31,27 @@ def reply_text(msg):
 def get_message_at(idx=-1):
     """Function returns the message at given idx, last by default"""
     global driver
-    last = driver.find_elements_by_class_name(OUT_CLASS)[idx].text
-    lm_text, lm_time = last.split("\n")
+    last = driver.find_elements_by_class_name(TEXT_CLASS)[idx].text
+    lm_text = str(last)
 
     # Retuens NONE if no new messages were sent.
     if lm_text == SESSION_TERMINATOR_REP:
-        return None, lm_time
+        return None
 
     # --V  Might server for later refinements  V--
     # Returns TERMINATION VALUE if this is my will.
     elif lm_text == SESSION_TERMINATOR_MSG:
-        return SHUTDOWN_VALUE, lm_time
+        return SHUTDOWN_VALUE
 
     # Finnally, returns urls or junk (which is filtered later).
-    return lm_text, lm_time
+    return lm_text
 
 
 def is_url(lm_text):
     """Function returns boolian value if given text is url. (to simplify the view)"""
+    # lm_text is NONE:
+    if not lm_text:
+        return False
     return re.match(URL_EXPRESSION, lm_text)
 
 
@@ -54,12 +59,12 @@ def catch_up():
     """Function returs list of all the messages that were sent while the bot was down."""
     idx = -1
     pending = []
-    lm_text, lm_time = get_message_at(idx)
+    lm_text = get_message_at(idx)
 
     # Loop appends pending urls (if any) until reaches last SESSION_TERMINATOR_REP.
     while lm_text:
         if is_url(lm_text):
-            print lm_text
+            print 'catch: ' + lm_text
             pending.append(lm_text)
         idx -= 1
     return pending
@@ -73,7 +78,7 @@ def main():
     # Lets user scan the QR code:
     raw_input('press ENTER when ready')
 
-    # Clicks on BOT contact:
+    # Finds and clicks on BOT contact
     driver.find_element_by_xpath(BOT_CONTACT).click()
     print 'BOT: I pledge myself to your teachings'
 
@@ -82,13 +87,23 @@ def main():
     for i in pending:
         print i
 
+    # Restores alst treated url from file:
+    with open(LAST_TREATED_FILE, 'r') as f:
+        lt_text = f.read()
+    lm_text = get_message_at()
+
     # Main loop
     while lm_text != SESSION_TERMINATOR_MSG:
 
         # Not appropriate lm_text are returned None.
-        if is_url(lm_text):
+        if is_url(lm_text) and lm_text != lt_text:
             print lm_text
-        last_message = get_message_at()
+
+            # Updates last treated url, variable and file:
+            lt_text = lm_text
+            with open(LAST_TREATED_FILE, 'w') as f:
+                f.write(lm_text)
+        lm_text = get_message_at()
 
     # Quit acknowledge:
     reply_text(SESSION_TERMINATOR_REP)
@@ -102,4 +117,5 @@ if __name__ == '__main__':
     main()
 
 # TODO:
-# consider quit during catch_up
+# 1. consider quit during catch_up.
+# 2. mischief managed does not work.
