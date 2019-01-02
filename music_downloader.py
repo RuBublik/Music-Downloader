@@ -5,21 +5,14 @@ import os
 
 # Contants
 QUEUE_FILE = 'download_queue.txt'
-DOWNLOAD_PATH = r'D:\\Elik\\MUSIC'
+DOWNLOAD_PATH = r'D:\\Desktop\\MUSIC'
 DEBUG_TEMPL = """
---------------------
 
-songs dowloaded:\t{0}/{1}
-dirs created:\t\t{2}
-files arranged:\t\t{3}/{4}
-
---------------------
-
-failed links:
-\t{5}
+dirs created:\t\t{1}
+files arranged:\t\t{2}/{3}
 
 files require attention:
-\t{6}
+\t{4}
 """
 
 
@@ -31,47 +24,6 @@ def main():
     mkdir_cntr = 0
     failed_songs = []
     handled_cntr = 0
-
-
-# =========
-# DOWNLOAD:
-# =========
-
-    # setting download options:
-    download_options = {
-        'format': 'bestaudio/best',
-        'outtmpl': '{}\\%(title)s.%(ext)s'.format(DOWNLOAD_PATH),
-        'nocheckcertificate': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
-
-    # getting urls from file:
-    with open(QUEUE_FILE, 'r') as f:
-        song_urls = f.readlines()
-
-    # downloading songs:
-    with youtube_dl.YoutubeDL(download_options) as dl:
-        for url in song_urls:
-            try:
-
-                # might raise an exception if url is not a single video but a play-list.
-                dl.download([url])
-                success_dl += 1
-            except:
-                failed_urls.append(url)
-
-    # clearing the queue file:
-    f = open(QUEUE_FILE, 'w')
-    f.close()
-
-
-# =========
-# Arrange:
-# =========
 
     # for easier acces to files:
     os.chdir(DOWNLOAD_PATH)
@@ -104,16 +56,13 @@ def main():
 
     # Pretty prints:
     print DEBUG_TEMPL.format(success_dl,
-                             len(song_urls),
                              mkdir_cntr,
                              handled_cntr,
                              len(only_files),
-                             '\r\n\t'.join(
-                                 failed_urls) if failed_urls else '*',
                              '\r\n\t'.join(failed_songs) if failed_songs else '*')
 
     # lets user see debug output:
-    raw_input('--------------------')
+    raw_input('-->')
 
 
 if __name__ == '__main__':
