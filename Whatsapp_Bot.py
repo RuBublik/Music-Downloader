@@ -11,7 +11,7 @@ from selenium.webdriver.common.keys import Keys
 
 # Constants
 WHATSAPP_WEB_URL = 'https://web.whatsapp.com/'
-BOT_CONTACT = '//span[@title = "MusicBot"]'
+BOT_CONTACT = '//span[@title="MusicBot"]'
 MESSAGE_BOX = 'div._2S1VP.copyable-text.selectable-text'
 OUT_CLASS = 'message-out'
 TEXT_CLASS = 'ZhF0n'
@@ -21,7 +21,7 @@ URL_EXPRESSION = r'https://youtu.be/.+'
 SHUTDOWN_VALUE = '-1'
 IGNORE_VALUE = '-2'
 LAST_TREATED_FILE = 'shit.txt'
-DOWNLOAD_PATH = r'D:\\Elik\\MUSIC'
+DOWNLOAD_PATH = r'D:\\Desktop\\MUSIC'
 DOWNLOAD_OPTIONS = {
     'format': 'bestaudio/best',
     'outtmpl': '{}\\%(title)s.%(ext)s'.format(DOWNLOAD_PATH),
@@ -36,6 +36,9 @@ DOWNLOAD_OPTIONS = {
 
 class WhatsappBot:
     def __init__(self):
+        """ hrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        self.driver = webdriver.Chrome(chrome_options=chrome_options) """
         self.driver = webdriver.Chrome()
         self.driver.get(WHATSAPP_WEB_URL)
         self.dl = youtube_dl.YoutubeDL(DOWNLOAD_OPTIONS)
@@ -53,7 +56,8 @@ class WhatsappBot:
         self.msg_box.send_keys(Keys.RETURN)
         self.driver.close()
         for i in self.download_threads:
-            i.join()
+            if i:
+                i.join()
 
     def is_url(self, lm_text):
         """Function returns boolian value if given text is url."""
@@ -70,7 +74,7 @@ class WhatsappBot:
         if lm_text == TERMINATION_REP:
             return None
 
-        # Returns TERMINATION VALUE if this is my will.
+        # Causes bot to SHUTDOWN if this is my will.
         elif lm_text == KILL_SWITCH:
             return SHUTDOWN_VALUE
 
@@ -96,28 +100,29 @@ class WhatsappBot:
             while lm_text:
                 if self.is_url(lm_text):
                     t = threading.Thread(
-                        target=self._download_song, args=(lm_text,)).start()
+                            target=self._download_song, args=(lm_text,))
                     self.download_threads.append(t)
-
+                    t.start()
                 idx -= 1
                 lm_text = self.get_message_at(idx)
 
     def assign_download(self, url):
         """Funciton starts downloading process and updates the LAST_TREATED_FILE."""
-        t = threading.Thread(target=self._download_song, args=(url,)).start()
+        t = threading.Thread(target=self._download_song, args=(url,))
         self.download_threads.append(t)
+        t.start()
         with open(LAST_TREATED_FILE, 'w') as f:
             f.write(url)
 
     def _download_song(self, url):
-        """Target of assign_download, downloads the sond and arranges."""
+        """Target of assign_download, downloads the sond with youtube_dl."""
         try:
 
             # might raise an exception if url is not a single video but a play-list.
             # or, if the song already exists.
             self.dl.download([url])
         except:
-            print 'already exists or defective url, ' + url
+            print 'defective url -> ' + url
 
 
 def main():
