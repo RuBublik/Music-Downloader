@@ -3,11 +3,6 @@
 Installation:
 1. unzip ffmpeg.zip to the same folder with music_downloader.py
 2. make sure u have the following python modules installed:
-youtube_dl  - to install run: pip install youtube-dl ; ('as admin' privileges)
-sys         - built in
-os          - built in
-time        - built in
-threading   - built in
 3.  have fun!
 
 -- remark:
