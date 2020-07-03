@@ -1,69 +1,70 @@
-﻿# imports
+﻿#this script requires a txt file with song urls as input, and a folder path to download to.
+# ^ both are given as command line parameters.
+#no need to change DOWNLOAD_OPTIONS.
+
 from __future__ import unicode_literals
 import youtube_dl
+import sys
 import os
+import threading
+import time
 
-# Contants
-QUEUE_FILE = 'download_queue.txt'
-DOWNLOAD_PATH = r'D:\\Desktop\\MUSIC'
-DEBUG_TEMPL = """
 
-dirs created:\t\t{1}
-files arranged:\t\t{2}/{3}
-
-files require attention:
-\t{4}
-"""
+DOWNLOAD_OPTIONS = {
+    'format': 'bestaudio/best',
+    'outtmpl': '{}\\%(title)s.%(ext)s',#.format(DOWNLOAD_PATH),
+    'nocheckcertificate': True,
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }],
+}
 
 
 def main():
 
-    # initiallizing counters and stuff...
-    success_dl = 0
-    failed_urls = []
-    mkdir_cntr = 0
-    failed_songs = []
-    handled_cntr = 0
+    # < BDIKOT PARAMETRIM >
+    if (len(sys.argv) != 3):
+        sys.exit( "usage: <whatever_you_call_the_file>.exe <queue_file_path> <download_folder_path>" )
+    else:
+        QUEUE_FILE = sys.argv[1]
+        DOWNLOAD_PATH = sys.argv[2]
+        if (not os.path.isfile(QUEUE_FILE) and QUEUE_FILE.endswith(".txt")):
+            sys.exit( "queue file does not exist, or is of wrong format :/" )
+        if (not os.path.isdir(DOWNLOAD_PATH)):
+            sys.exit( "download folder does not exist :/" )
+    # END: < BDIKOT PARAMETRIM >
 
-    # for easier acces to files:
-    os.chdir(DOWNLOAD_PATH)
+    # < ACCTUAL SCRIPT >
+    DOWNLOAD_OPTIONS['outtmpl'] = DOWNLOAD_OPTIONS['outtmpl'].format(DOWNLOAD_PATH)
+    dl = youtube_dl.YoutubeDL(DOWNLOAD_OPTIONS)
 
-    # lists only (unsorted) files in ROOT:
-    only_files = [song for song in os.listdir(
-        DOWNLOAD_PATH) if not os.path.isdir(song)]
+    # reading urls from file
+    with open(QUEUE_FILE, 'r') as f:
+        lines = f.readlines()
 
-    # loop for arranging files in folders:
-    for song_file in only_files:
-        try:
+    threads = []
+    # Loop starts downloading processes for all pending urls.
+    for line in lines:
 
-            # might raise an exception if file's name is not like:
-            # [band/singer] - [song name].mp3
-            band_dir = song_file.split(' -')[0]
+        # wait here while max threads are occupied,
+        Tidx = 0
+        while (len(threads) == 10):
+            #print ("Max threads...")
+            if (not threads[Tidx].is_alive()):
+                threads.pop(Tidx)
+                break
+            Tidx = (Tidx + 1) % len(threads)
+            time.sleep(50 / 1000)   # milliseconds
+            
+        # process start new theard
+        threads.append(threading.Thread(target=dl.download, args=([line.strip(),],)))
+        threads[-1].start()
 
-            # if band directory does not exist:
-            if not os.path.isdir(band_dir):
-                os.mkdir(band_dir)
-                mkdir_cntr += 1
-
-            #                                                    _        _
-            # renaming file's full name acctually moves the file  \_(ツ)_/
-            #
-            os.rename(os.path.join(DOWNLOAD_PATH, song_file),
-                      os.path.join(band_dir, song_file))
-            handled_cntr += 1
-        except:
-            failed_songs.append(song_file)
-
-    # Pretty prints:
-    print DEBUG_TEMPL.format(success_dl,
-                             mkdir_cntr,
-                             handled_cntr,
-                             len(only_files),
-                             '\r\n\t'.join(failed_songs) if failed_songs else '*')
-
-    # lets user see debug output:
-    raw_input('-->')
-
-
+    for t in threads:
+        t.join()
+    # END: < ACCTUAL SCRIPT >
+    
 if __name__ == '__main__':
     main()
