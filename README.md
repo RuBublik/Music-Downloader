@@ -12,7 +12,7 @@ threading   - built in
 
 -- remark:
 The youtube_dl module requires to be updated from time to time.
-to update, run: pip install -U youtube-dl ; ('as admin')
+To update, run: pip install -U youtube-dl ; ('as admin')
 
 ** ref **
 https://github.com/ytdl-org/youtube-dl/blob/master/README.md#how-do-i-update-youtube-dl
